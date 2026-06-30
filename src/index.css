@@ -1,0 +1,28 @@
+:root {
+  --text-titulos: #117ee4;
+  --text-main: #000000;
+  --text-logo: #969593;
+  --text-slogan: #555050;
+  --text-muted: #161744;
+}
+body {
+  margin: 0;
+  padding: 0;
+ 
+  /* Efecto de Fondo Metalizado (Titanio Oscuro) */
+  background: linear-gradient(135deg, #e6dfdf 0%, #504949 100%);
+  background-attachment: fixed; /* El metal se queda fijo aunque bajes la página */
+ 
+  color: var(--text-main);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+h1, h2 {
+  color: var(--text-titulos);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+strong {
+  color: var(--text-titulos);
+}
