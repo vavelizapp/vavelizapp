@@ -1,154 +1,149 @@
 import { useState } from 'react'
 import './App.css'
 import logoCube from './assets/vaveliz.png'
-import banner1 from './assets/banner1.png'
-import banner2 from './assets/banner2.png'
-import banner3 from './assets/banner3.png'
-import banner4 from './assets/banner4.png'
+import { supabase } from './supabaseClient'
 
 function App() {
-  // Estados para el cotizador interactivo
-  const [idiomaOrigen, setIdiomaOrigen] = useState('');
-  const [idiomaDestino, setIdiomaDestino] = useState('');
-  const [archivos, setArchivos] = useState([]);
-  const [analizando, setAnalizando] = useState(false);
-  const [resultado, setResultado] = useState(null);
+  // States for the interactive estimator
+  const [sourceLanguage, setSourceLanguage] = useState('');
+  const [targetLanguage, setTargetLanguage] = useState('');
+  const [files, setFiles] = useState([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState(null);
   
-  // Modales
-  const [mostrarModalInfo, setMostrarModalInfo] = useState(false);
-  const [mostrarModalPedido, setMostrarModalPedido] = useState(false);
+  // Modals
+  const [showModalInfo, setShowModalInfo] = useState(false);
+  const [showModalOrder, setShowModalOrder] = useState(false);
   
-  // Formulario cliente
-  const [datosCliente, setDatosCliente] = useState({
-    nombre: '', correo: '', codigoPais: '+1', telefono: ''
+  // Client form
+  const [clientData, setClientData] = useState({
+    name: '', email: '', countryCode: '+1', phone: ''
   });
 
-  const PRECIO_FIJO_PAGINA = 30.00;
-  const GASTOS_CERTIFICACION = 25.00;
+  const CERTIFICATION_FEES = 25.00;
 
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const nuevos = Array.from(e.dataTransfer.files).map(file => ({
-        file: file, esOficial: true, paginas: 1
+      const newFiles = Array.from(e.dataTransfer.files).map(file => ({
+        file: file, isOfficial: true, pages: 1, words: Math.max(250, Math.floor((file.size % 2000) + 500))
       }));
-      setArchivos((prev) => [...prev, ...nuevos]);
-      setResultado(null);
+      setFiles((prev) => [...prev, ...newFiles]);
+      setResult(null);
     }
   };
-  
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      const nuevos = Array.from(e.target.files).map(file => ({
-        file: file, esOficial: true, paginas: 1
+      const newFiles = Array.from(e.target.files).map(file => ({
+        file: file, isOfficial: true, pages: 1, words: Math.max(250, Math.floor((file.size % 2000) + 500))
       }));
-      setArchivos((prev) => [...prev, ...nuevos]);
-      setResultado(null);
+      setFiles((prev) => [...prev, ...newFiles]);
+      setResult(null);
     }
   };
 
-  const eliminarArchivo = (index) => {
-    const nuevos = archivos.filter((_, i) => i !== index);
-    setArchivos(nuevos);
-    setResultado(null);
+  const removeFile = (index) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
+    setResult(null);
   };
 
-  const toggleOficial = (index) => {
-    const nuevos = [...archivos];
-    nuevos[index].esOficial = !nuevos[index].esOficial;
-    setArchivos(nuevos);
-    setResultado(null);
+  const toggleOfficial = (index) => {
+    const newFiles = [...files];
+    newFiles[index].isOfficial = !newFiles[index].isOfficial;
+    setFiles(newFiles);
+    setResult(null);
   };
 
-  const actualizarPaginas = (index, valor) => {
-    const nuevos = [...archivos];
-    nuevos[index].paginas = valor < 1 ? 1 : valor;
-    setArchivos(nuevos);
-    setResultado(null);
+  const updatePages = (index, value) => {
+    const newFiles = [...files];
+    newFiles[index].pages = value < 1 ? 1 : value;
+    setFiles(newFiles);
+    setResult(null);
   };
 
-  const calcularCosto = () => {
-    if (!idiomaOrigen || !idiomaDestino) {
-      alert('Por favor, selecciona los idiomas de origen y destino.');
+  const calculateCost = () => {
+    if (!sourceLanguage || !targetLanguage) {
+      alert('Please select the source and target languages.');
       return;
     }
-    if (archivos.length === 0) {
-      alert('Por favor, sube al menos un documento para cotizar.');
+    if (files.length === 0) {
+      alert('Please upload at least one document for estimation.');
       return;
     }
-
-    setAnalizando(true);
-    setResultado(null);
-
+    setAnalyzing(true);
+    setResult(null);
     setTimeout(() => {
-      let costoTraduccionTotal = 0;
-      let totalPaginas = 0;
+      let totalTranslationCost = 0;
+      let totalPages = 0;
       
-      const desgloseDocumentos = archivos.map(obj => {
-        let costoDoc = 0;
-        totalPaginas += obj.paginas;
-
-        if (obj.esOficial) {
-          costoDoc = obj.paginas * PRECIO_FIJO_PAGINA;
-        } else {
-          const simulatedWords = Math.max(250, Math.floor((obj.file.size % 2000) + 500));
-          costoDoc = simulatedWords * 0.08; 
-        }
+      const documentBreakdown = files.map(obj => {
+        totalPages += obj.pages;
+        // Cost is now based on word count (0.08 per word)
+        const docCost = obj.words * 0.08;
+        totalTranslationCost += docCost;
         
-        costoTraduccionTotal += costoDoc;
-        
-        return { 
-          nombre: obj.file.name, 
-          tipo: obj.esOficial ? `Oficial (${obj.paginas} pág.)` : `Extenso (${obj.paginas} pág.)`,
-          costo: costoDoc.toFixed(2)
+        return {
+          name: obj.file.name,
+          words: obj.words,
+          type: obj.isOfficial ? `Official (${obj.pages} pages)` : `General (${obj.pages} pages)`,
+          cost: docCost.toFixed(2)
         };
       });
-      
-      const costoCertificacionTotal = GASTOS_CERTIFICACION * archivos.length;
-      const totalEstimado = costoTraduccionTotal + costoCertificacionTotal;
 
+      const totalCertificationCost = CERTIFICATION_FEES * files.length;
+      const totalEstimated = totalTranslationCost + totalCertificationCost;
+      
       const now = new Date();
       const hour = now.getHours();
-      let diasASumar = (totalPaginas <= 6) ? 1 : ((hour >= 15) ? 3 : 2);
+      let daysToAdd = (totalPages <= 6) ? 1 : ((hour >= 15) ? 3 : 2);
+      const deliveryDate = new Date(now);
+      deliveryDate.setDate(deliveryDate.getDate() + daysToAdd);
+      if (deliveryDate.getDay() === 6) deliveryDate.setDate(deliveryDate.getDate() + 2);
+      if (deliveryDate.getDay() === 0) deliveryDate.setDate(deliveryDate.getDate() + 1);
       
-      const fechaEntrega = new Date(now);
-      fechaEntrega.setDate(fechaEntrega.getDate() + diasASumar);
-      
-      if (fechaEntrega.getDay() === 6) fechaEntrega.setDate(fechaEntrega.getDate() + 2);
-      if (fechaEntrega.getDay() === 0) fechaEntrega.setDate(fechaEntrega.getDate() + 1);
-
-      setResultado({
-        desglose: desgloseDocumentos,
-        costoTraduccion: costoTraduccionTotal.toFixed(2),
-        certificacion: costoCertificacionTotal.toFixed(2),
-        total: totalEstimado.toFixed(2),
-        entrega: fechaEntrega.toLocaleDateString('es-ES', { 
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      setResult({
+        breakdown: documentBreakdown,
+        translationCost: totalTranslationCost.toFixed(2),
+        certification: totalCertificationCost.toFixed(2),
+        total: totalEstimated.toFixed(2),
+        delivery: deliveryDate.toLocaleDateString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         })
       });
-      setAnalizando(false);
+      setAnalyzing(false);
     }, 1500);
   };
 
-  const procesarPedido = (e) => {
+  const processOrder = async (e) => {
     e.preventDefault();
-    const telefonoCompleto = `${datosCliente.codigoPais} ${datosCliente.telefono}`;
-    alert(`¡Gracias, ${datosCliente.nombre}!\nTu cotización ha sido registrada con el número: ${telefonoCompleto}.\nSe ha creado tu perfil para el Rastreador de Estatus.`);
-    setMostrarModalPedido(false);
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          first_name: clientData.name,
+          phone_number: clientData.phone,
+          country_code: clientData.countryCode
+        },
+      ]);
+    if (error) {
+      console.error("Error saving data:", error);
+      alert("There was an issue processing your request. Please try again.");
+    } else {
+      const fullPhone = `${clientData.countryCode} ${clientData.phone}`;
+      alert(`Thank you, ${clientData.name}!\nYour quote has been registered with phone number: ${fullPhone}.\nYour profile has been created for the Status Tracker.`);
+      setShowModalOrder(false);
+    }
   };
 
   return (
     <div className="app-container">
-      {/* CABECERA */}
+      {/* HEADER */}
       <header className="top-header">
         <div className="header-grid">
           <div className="brand-lang-container">
-            <div className="language-selector">
-              <button className="lang-btn active">ES</button>
-              <span className="separator">|</span>
-              <button className="lang-btn">EN</button>
-            </div>
             <a href="/" className="logo-link">
               <img src={logoCube} alt="Vaveliz" className="brand-logo" />
             </a>
@@ -160,77 +155,64 @@ function App() {
           <div className="divider"></div>
           <div className="contact-column contact-text">
             <p className="label">Translation Agency</p>
-            <p className="label">🏛️ 319 Brookdale Dr., League City, Tx, 77573</p>
-            <p className="label">Horario: Lunes - Viernes, 8 a.m. - 6 p.m.</p>
-            <p className="label">En linea: 24/7</p>
+            <p className="label">🏛️ 319 Brookdale Dr., League City, TX, 77573</p>
+            <p className="label">Business Hours: Monday - Friday, 8 a.m. - 6 p.m.</p>
+            <p className="label">Online: 24/7</p>
           </div>
           <div className="contact-column">
-            <p className="label">📞 Número de Telefono:</p>
+            <p className="label">📞 Phone Number:</p>
             <p className="value">+1 (346) 810-3931</p>
-            <p className="subtext">Envía tu solicitud a:</p>
+            <p className="subtext">Send your request to:</p>
             <a href="mailto:info@vaveliz.com" className="email">info@vaveliz.com</a>
-            <button className="quote-button">Cotización y Pedido.</button>
+            <button className="quote-button">Quote and Order.</button>
           </div>
         </div>
         <nav className="main-nav">
-          <a href="#agencia">NUESTRA AGENCIA</a>
-          <a href="#servicios">SERVICIOS Y TARIFAS</a>
-          <a href="#como-funciona">CÓMO FUNCIONA</a>
-          <a href="#pago">PAGO Y ENTREGA</a>
-          <a href="#contacto">CONTACTOS</a>
+          <a href="#agency">OUR AGENCY</a>
+          <a href="#services">SERVICES AND RATES</a>
+          <a href="#how-it-works">HOW IT WORKS</a>
+          <a href="#payment">PAYMENT AND DELIVERY</a>
+          <a href="#contact">CONTACTS</a>
         </nav>
       </header>
-      
-      {/* BANNERS */}
-      <section className="hero-slider">
-        <div className="slides">
-          <div className="slide"><img src={banner1} alt="Banner 1" /></div>
-          <div className="slide"><img src={banner2} alt="Banner 2" /></div>
-        </div>
-      </section>
-      
       <main>
         {/* ==============================================
-            SECCIÓN 1: COTIZADOR INTERACTIVO 
-            ============================================== */}
+        SECTION 1: INTERACTIVE ESTIMATOR
+        ============================================== */}
         <section className="cotizador-card" style={{ padding: '40px 25px' }}>
-          <h2 style={{ textAlign: 'center', color: '#117ee4', fontSize: '24px', marginBottom: '10px' }}>Cotización Inmediata</h2>
-          <p className="subtitle">Sube tus documentos y obtén un presupuesto exacto en minutos.</p>
-
-          <div className={`drop-zone ${archivos.length > 0 ? 'has-file' : ''}`} onDragOver={handleDragOver} onDrop={handleDrop}>
+          <h2 style={{ textAlign: 'center', color: '#117ee4', fontSize: '24px', marginBottom: '10px' }}>Instant Quote</h2>
+          <p className="subtitle">Upload your documents and get an exact quote in minutes.</p>
+          <div className={`drop-zone ${files.length > 0 ? 'has-file' : ''}`} onDragOver={handleDragOver} onDrop={handleDrop}>
             <div className="drop-zone-content">
               <span className="upload-icon">📄</span>
-              <p>Arrastra tus archivos aquí o 
+              <p>Drag and drop your files here or
                 <label className="file-label">
                   <input type="file" onChange={handleFileChange} accept=".pdf,.docx,.jpg,.jpeg,.png" multiple />
-                  <span> Examinar</span>
+                  <span> Browse</span>
                 </label>
               </p>
-              
-              <div className="info-banner-dropzone" onClick={() => setMostrarModalInfo(true)}>
+              <div className="info-banner-dropzone" onClick={() => setShowModalInfo(true)}>
                 <span className="info-icon">ⓘ</span>
-                <span>Condiciones de Entrega y Calidad</span>
+                <span>Delivery and Quality Terms</span>
               </div>
-              
-              <p className="formats-note">Formatos aceptados: PDF, DOCX, JPG (Resolución mínima recomendada para USCIS: 300 dpi).</p>
+              <p className="formats-note">Accepted formats: PDF, DOCX, JPG (Minimum recommended resolution for USCIS: 300 dpi).</p>
             </div>
-            
-            {archivos.length > 0 && (
+            {files.length > 0 && (
               <div className="file-list">
-                {archivos.map((obj, index) => (
+                {files.map((obj, index) => (
                   <div key={index} className="file-item-extended">
                     <div className="file-info-top">
                       <span className="file-name">📄 {obj.file.name}</span>
-                      <button onClick={() => eliminarArchivo(index)} className="btn-remove-file">X</button>
+                      <button onClick={() => removeFile(index)} className="btn-remove-file">X</button>
                     </div>
                     <div className="file-options">
                       <label>
-                        <input type="checkbox" checked={obj.esOficial} onChange={() => toggleOficial(index)} />
-                        Documento Oficial (Acta, Pasaporte, ID)
+                        <input type="checkbox" checked={obj.isOfficial} onChange={() => toggleOfficial(index)} />
+                        Official Document
                       </label>
                       <label>
-                        Páginas: 
-                        <input type="number" min="1" value={obj.paginas} onChange={(e) => actualizarPaginas(index, parseInt(e.target.value) || 1)} className="page-input" />
+                        Pages:
+                        <input type="number" min="1" value={obj.pages} onChange={(e) => updatePages(index, parseInt(e.target.value) || 1)} className="page-input" />
                       </label>
                     </div>
                   </div>
@@ -238,244 +220,234 @@ function App() {
               </div>
             )}
           </div>
-
           <div className="selectors-container">
-            <select value={idiomaOrigen} onChange={(e) => setIdiomaOrigen(e.target.value)} className="lang-select">
-              <option value="">Selecciona Idioma de Origen</option>
-              <option value="es">Español</option>
-              <option value="en">Inglés</option>
-              <option value="fr">Francés</option>
+            <select value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="lang-select">
+              <option value="">Select Source Language</option>
+              <option value="es">Spanish</option>
+              <option value="en">English</option>
+              <option value="fr">French</option>
             </select>
-            <select value={idiomaDestino} onChange={(e) => setIdiomaDestino(e.target.value)} className="lang-select">
-              <option value="">Selecciona Idioma de Destino</option>
-              <option value="en">Inglés</option>
-              <option value="es">Español</option>
-              <option value="fr">Francés</option>
+            <select value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} className="lang-select">
+              <option value="">Select Target Language</option>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
             </select>
-            <button onClick={calcularCosto} className="btn-calcular" disabled={analizando}>
-              {analizando ? 'Calculando...' : 'Calcular Costo'}
+            <button onClick={calculateCost} className="btn-calcular" disabled={analyzing}>
+              {analyzing ? 'Calculating...' : 'Calculate Cost'}
             </button>
           </div>
-
-          {analizando && (
+          {analyzing && (
             <div className="analizando-loader">
               <div className="spinner"></div>
-              <p>Analizando carga de trabajo...</p>
+              <p>Analyzing workload...</p>
             </div>
           )}
-
-          {resultado && (
+          {result && (
             <div className="resultado-cotizacion">
-              <h3>Resumen del Presupuesto</h3>
-              
+              <h3>Quote Summary</h3>
               <div className="desglose-documentos">
-                <h4>Desglose por archivo:</h4>
-                {resultado.desglose.map((item, index) => (
+                <h4>Breakdown per file:</h4>
+                {result.breakdown.map((item, index) => (
                   <div key={index} className="desglose-item">
-                    <span className="doc-name">📄 {item.nombre} <br/><small style={{color: '#777'}}>{item.tipo}</small></span>
-                    <span className="doc-price">${item.costo} USD</span>
+                    <span className="doc-name">
+                        📄 {item.name} <br/>
+                        <small style={{color: '#777'}}>{item.type} | {item.words} words</small>
+                    </span>
+                    <span className="doc-price">${item.cost} USD</span>
                   </div>
                 ))}
               </div>
-
               <div className="resultado-item">
-                <span>Subtotal Traducción:</span>
-                <strong>${resultado.costoTraduccion} USD</strong>
+                <span>Translation Subtotal:</span>
+                <strong>${result.translationCost} USD</strong>
               </div>
               <div className="resultado-item">
-                <span>Certificación x {archivos.length} (USCIS):</span>
-                <strong>${resultado.certificacion} USD</strong>
+                <span>Certification x {files.length} (USCIS):</span>
+                <strong>${result.certification} USD</strong>
               </div>
               <div className="resultado-item total-row">
-                <span>Total Estimado:</span>
-                <strong className="total-price">${resultado.total} USD</strong>
+                <span>Total Estimated:</span>
+                <strong className="total-price">${result.total} USD</strong>
               </div>
-              
               <div className="entrega-nota">
-                <span>📅 <strong>Entrega estimada: {resultado.entrega}</strong></span>
+                <span>📅 <strong>Estimated Delivery: {result.delivery}</strong></span>
               </div>
-
-              <button className="btn-pedido" onClick={() => setMostrarModalPedido(true)}>
-                Proceder con el Pedido
+              <button className="btn-pedido" onClick={() => setShowModalOrder(true)}>
+                Proceed with Order
               </button>
             </div>
           )}
         </section>
-
         {/* ==============================================
-            SECCIÓN 2: SERVICIOS (COMO EN LA IMAGEN 2)
-            ============================================== */}
-        <section id="servicios">
-          <h2 className="section-title">SERVICIOS DE TRADUCCIÓN ESPECIALIZADA</h2>
+        SECTION 2: SERVICES
+        ============================================== */}
+        <section id="services">
+          <h2 className="section-title">SPECIALIZED TRANSLATION SERVICES</h2>
           <div className="services-grid">
             <div className="service-card">
               <div className="service-icon">⚖️</div>
-              <h3>Traducción Certificada</h3>
-              <p>Para USCIS, tribunales y trámites migratorios con total validez legal y notariada.</p>
+              <h3>Certified Translation</h3>
+              <p>For USCIS, courts, and immigration processes with full legal validity.</p>
             </div>
             <div className="service-card">
               <div className="service-icon">🏥</div>
-              <h3>Documentos Civiles y Médicos</h3>
-              <p>Actas de nacimiento, matrimonio, divorcio, pasaportes, y expedientes clínicos.</p>
+              <h3>Civil and Medical Documents</h3>
+              <p>Birth certificates, marriage, divorce, passports, and medical records.</p>
             </div>
             <div className="service-card">
               <div className="service-icon">🏢</div>
-              <h3>Traducción Corporativa</h3>
-              <p>Contratos, manuales, técnicos y balances financieros para expansión empresarial.</p>
+              <h3>Corporate Translation</h3>
+              <p>Contracts, manuals, technical documents, and financial reports for business expansion.</p>
             </div>
             <div className="service-card">
               <div className="service-icon">📜</div>
-              <h3>Legalización y Apostilla</h3>
-              <p>Gestión completa para que tus documentos sean válidos en el extranjero.</p>
+              <h3>Legalization and Apostille</h3>
+              <p>Complete management to ensure your documents are valid abroad.</p>
             </div>
           </div>
         </section>
-
         {/* ==============================================
-            SECCIÓN 3: RASTREADOR (COMO EN LA IMAGEN 2)
-            ============================================== */}
-        <section id="como-funciona">
-          <h2 className="section-title">RASTREADOR DE ESTATUS Y PROCESO</h2>
+        SECTION 3: TRACKER
+        ============================================== */}
+        <section id="how-it-works">
+          <h2 className="section-title">STATUS TRACKER AND PROCESS</h2>
           <div className="tracker-container">
             <div className="tracker-step">
               <div className="step-circle">1</div>
               <div className="step-line"></div>
-              <h4>Recepción y Análisis</h4>
-              <p>Revisión de documentos y calidad a 300 dpi.</p>
+              <h4>Reception and Analysis</h4>
+              <p>Document review and quality check at 300 dpi.</p>
             </div>
             <div className="tracker-step">
               <div className="step-circle">2</div>
               <div className="step-line"></div>
-              <h4>Asignación</h4>
-              <p>Selección del traductor certificado ideal.</p>
+              <h4>Assignment</h4>
+              <p>Selection of the ideal certified translator.</p>
             </div>
             <div className="tracker-step">
               <div className="step-circle">3</div>
               <div className="step-line"></div>
-              <h4>Traducción y Edición</h4>
-              <p>Conversión precisa del texto original.</p>
+              <h4>Translation and Editing</h4>
+              <p>Precise conversion of the original text.</p>
             </div>
             <div className="tracker-step">
               <div className="step-circle">4</div>
               <div className="step-line"></div>
-              <h4>Auditoría y Certificación</h4>
-              <p>Revisión final y firma notarial (USCIS).</p>
+              <h4>Audit and Certification</h4>
+              <p>Final review and notary signature (USCIS).</p>
             </div>
             <div className="tracker-step">
               <div className="step-circle">5</div>
-              <h4>Entrega Digital / Física</h4>
-              <p>Envío seguro al cliente.</p>
+              <div className="step-line"></div>
+              <h4>Digital / Physical Delivery</h4>
+              <p>Secure shipment to the client.</p>
             </div>
           </div>
         </section>
       </main>
-
       {/* ==============================================
-          PIE DE PÁGINA OSCURO (FOOTER)
-          ============================================== */}
+      DARK FOOTER
+      ============================================== */}
       <footer className="site-footer">
         <div className="footer-grid">
           <div className="footer-col">
             <img src={logoCube} alt="Vaveliz Logo" className="footer-logo" />
-            <p>Líderes en traducción certificada con estándares internacionales. Confiabilidad y eficiencia garantizada.</p>
+            <p>Leaders in certified translation with international standards. Reliability and efficiency guaranteed.</p>
           </div>
           <div className="footer-col">
-            <h4>Enlaces Rápidos</h4>
+            <h4>Quick Links</h4>
             <ul>
-              <li><a href="#servicios">Servicios</a></li>
-              <li><a href="#como-funciona">Cómo funciona</a></li>
-              <li><a href="#contacto">Contacto</a></li>
+              <li><a href="#services">Services</a></li>
+              <li><a href="#how-it-works">How it works</a></li>
+              <li><a href="#contact">Contact</a></li>
             </ul>
           </div>
           <div className="footer-col">
             <h4>Legal</h4>
             <ul>
-              <li><a href="#">Política de Privacidad</a></li>
-              <li><a href="#">Términos de Servicio</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">Terms of Service</a></li>
             </ul>
           </div>
         </div>
         <div className="footer-bottom">
-          &copy; 2026 Vaveliz Translation Agency. Todos los derechos reservados.
+          &copy; 2026 Vaveliz Translation Agency. All rights reserved.
         </div>
       </footer>
-
       {/* ==============================================
-          MODALES Y FORMULARIOS FLOTANTES
-          ============================================== */}
-      {mostrarModalInfo && (
-        <div className="modal-overlay" onClick={() => setMostrarModalInfo(false)}>
+      MODALS AND FLOATING FORMS
+      ============================================== */}
+      {showModalInfo && (
+        <div className="modal-overlay" onClick={() => setShowModalInfo(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Condiciones de Entrega y Calidad</h3>
+            <h3>Delivery and Quality Terms</h3>
             <ul className="modal-lista">
-              <li><strong>Calidad Mínima:</strong> Los documentos deben subirse con una resolución mínima de 300 dpi para garantizar su certificación y aceptación oficial ante entidades como USCIS.</li>
-              <li><strong>Entregas en 24 Horas:</strong> Aplica automáticamente para pedidos (cortos o largos) cuya suma total no supere las 6 páginas.</li>
-              <li><strong>Entregas Regulares:</strong> Si la suma supera las 6 páginas, el tiempo de entrega será de 2 a 3 días hábiles.</li>
+              <li><strong>Minimum Quality:</strong> Documents must be uploaded with a minimum resolution of 300 dpi to ensure certification and official acceptance for entities such as USCIS.</li>
+              <li><strong>24-Hour Delivery:</strong> Automatically applies for orders (short or long) with a total of 6 pages or fewer.</li>
+              <li><strong>Standard Delivery:</strong> If the total exceeds 6 pages, the delivery time is 2 to 3 business days.</li>
             </ul>
-            <button className="quote-button" onClick={() => setMostrarModalInfo(false)}>Entendido</button>
+            <button className="quote-button" onClick={() => setShowModalInfo(false)}>Understood</button>
           </div>
         </div>
       )}
-
-      {mostrarModalPedido && (
-        <div className="modal-overlay" onClick={() => setMostrarModalPedido(false)}>
+      {showModalOrder && (
+        <div className="modal-overlay" onClick={() => setShowModalOrder(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Finalizar Pedido y Crear Cuenta</h3>
+            <h3>Finalize Order and Create Account</h3>
             <p style={{ fontSize: '13px', color: '#555', marginBottom: '20px' }}>
-              Por favor, completa tus datos de contacto. Esta información nos permitirá generar tu perfil para que puedas visualizar el progreso de tu traducción en el Rastreador de Estatus.
+              Please provide your contact details. This information will allow us to generate your profile so you can track the progress of your translation in the Status Tracker.
             </p>
-            
-            <form className="form-pedido" onSubmit={procesarPedido}>
+            <form className="form-pedido" onSubmit={processOrder}>
               <div className="form-group">
-                <label>Nombre Completo:</label>
-                <input 
-                  type="text" 
-                  required 
-                  placeholder="Ej. Juan Pérez"
-                  value={datosCliente.nombre} 
-                  onChange={e => setDatosCliente({...datosCliente, nombre: e.target.value})} 
+                <label>Full Name:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. John Doe"
+                  value={clientData.name}
+                  onChange={e => setClientData({...clientData, name: e.target.value})}
                 />
               </div>
               <div className="form-group">
-                <label>Correo Electrónico:</label>
-                <input 
-                  type="email" 
-                  required 
-                  placeholder="ejemplo@correo.com"
-                  value={datosCliente.correo} 
-                  onChange={e => setDatosCliente({...datosCliente, correo: e.target.value})} 
+                <label>Email Address:</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="example@email.com"
+                  value={clientData.email}
+                  onChange={e => setClientData({...clientData, email: e.target.value})}
                 />
               </div>
               <div className="form-group">
-                <label>Teléfono / WhatsApp:</label>
+                <label>Phone / WhatsApp:</label>
                 <div className="phone-input-group">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="country-code-input"
                     required
                     placeholder="+1"
-                    title="Código de país"
-                    value={datosCliente.codigoPais} 
-                    onChange={e => setDatosCliente({...datosCliente, codigoPais: e.target.value})} 
+                    title="Country Code"
+                    value={clientData.countryCode}
+                    onChange={e => setClientData({...clientData, countryCode: e.target.value})}
                   />
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     className="phone-number-input"
-                    required 
+                    required
                     placeholder="346 810 3931"
-                    title="Número de teléfono"
-                    value={datosCliente.telefono} 
-                    onChange={e => setDatosCliente({...datosCliente, telefono: e.target.value})} 
+                    title="Phone Number"
+                    value={clientData.phone}
+                    onChange={e => setClientData({...clientData, phone: e.target.value})}
                   />
                 </div>
-                <span className="whatsapp-note">Recomendamos usar tu número de WhatsApp para tu comodidad.</span>
+                <span className="whatsapp-note">We recommend using your WhatsApp number for your convenience.</span>
               </div>
-              
               <button type="submit" className="btn-pedido" style={{ marginTop: '10px' }}>
-                Confirmar Cotización y Suscribirse
+                Confirm Quote and Subscribe
               </button>
-              <button type="button" className="btn-cancelar" onClick={() => setMostrarModalPedido(false)}>
-                Cancelar
+              <button type="button" className="btn-cancelar" onClick={() => setShowModalOrder(false)}>
+                Cancel
               </button>
             </form>
           </div>
