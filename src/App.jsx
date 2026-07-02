@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import logoCube from './assets/vaveliz.png'
+//import logoCube from './assets/vaveliz.png'
 import { supabase } from './supabaseClient'
 
 function App() {
@@ -145,10 +145,10 @@ function App() {
         <div className="header-grid">
           <div className="brand-lang-container">
             <a href="/" className="logo-link">
-              <img src={logoCube} alt="Vaveliz" className="brand-logo" />
+              {/*<img src={logoCube} alt="Vaveliz" className="brand-logo" />*/}
             </a>
             <div className="brand-text-block">
-              <h1>VAVELIZ</h1>
+              <h1>Vaveliz</h1>
               <span className="brand-tagline">RELIABILITY EFFICIENCY</span>
             </div>
           </div>
@@ -352,7 +352,7 @@ function App() {
       <footer className="site-footer">
         <div className="footer-grid">
           <div className="footer-col">
-            <img src={logoCube} alt="Vaveliz Logo" className="footer-logo" />
+            {/*<img src={logoCube} alt="Vaveliz Logo" className="footer-logo" />*/}
             <p>Leaders in certified translation with international standards. Reliability and efficiency guaranteed.</p>
           </div>
           <div className="footer-col">
