@@ -103,7 +103,7 @@ section { background-color: #ffffff; padding: 35px 25px; border-radius: 8px; mar
 .total-price { color: #28a745; font-size: 24px; }
 .entrega-nota { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 5px; font-size: 14px; text-align: center; margin: 20px 0; border: 1px solid #ffeeba; }
 .btn-pedido { width: 100%; background-color: #28a745; color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3); }
-.btn-pedido:hover { background-color: #218838; transform: translateY(-1px); }
+.btn-pedido:hover { background: #218838; transform: translateY(-1px); }
 .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
 .service-card { border: 1px solid #eaeaea; border-radius: 8px; padding: 25px 15px; text-align: center; transition: 0.3s; background: #fff; }
 .service-card:hover { box-shadow: 0 8px 15px rgba(0,0,0,0.08); transform: translateY(-3px); border-color: #cce5ff; }

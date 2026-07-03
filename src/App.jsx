@@ -3,6 +3,10 @@ import './App.css'
 import logoCube from './assets/vaveliz.png'
 import { supabase } from './supabaseClient'
 import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configuración del worker de PDF.js usando CDN para que funcione perfecto con Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 function App() {
   // States for the interactive estimator
@@ -20,23 +24,85 @@ function App() {
   const [clientData, setClientData] = useState({
     name: '', email: '', countryCode: '+1', phone: ''
   });
+  
   const CERTIFICATION_FEES = 25.00;
+  const MAX_PAGES_BROWSER = 100; // Límite de seguridad para el navegador
 
-  // Nueva función integrada para OCR
-  const processFilesWithOCR = async (fileList) => {
+  // Nueva función Híbrida: PDF Nativo primero, OCR como respaldo
+  const processFilesHybrid = async (fileList) => {
     setAnalyzing(true);
     const processedFiles = await Promise.all(
       Array.from(fileList).map(async (file) => {
         try {
-          const { data: { text } } = await Tesseract.recognize(file, 'spa');
-          const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-          return { file, isOfficial: true, pages: 1, words: Math.max(50, wordCount) };
+          let wordCount = 0;
+          let pages = 1;
+
+          // 1. SI ES UN ARCHIVO PDF
+          if (file.type === 'application/pdf') {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            pages = pdf.numPages;
+
+            let pagesToProcess = pages;
+            if (pages > MAX_PAGES_BROWSER) {
+              alert(`El archivo ${file.name} tiene ${pages} páginas. Por seguridad, analizaremos una muestra representativa de ${MAX_PAGES_BROWSER} páginas para la cotización.`);
+              pagesToProcess = MAX_PAGES_BROWSER;
+            }
+
+            let fullText = '';
+            // Extracción nativa rápida
+            for (let i = 1; i <= pagesToProcess; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map(item => item.str).join(' ');
+              fullText += pageText + ' ';
+            }
+
+            wordCount = fullText.split(/\s+/).filter(word => word.length > 0).length;
+
+            // Si hay muy pocas palabras, asumimos que es un documento escaneado y usamos OCR como respaldo
+            if (wordCount < pagesToProcess * 10) {
+              console.log(`PDF escaneado detectado en ${file.name}. Usando OCR en la primera página...`);
+              const page1 = await pdf.getPage(1);
+              const viewport = page1.getViewport({ scale: 1.5 });
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+              
+              await page1.render({ canvasContext: context, viewport: viewport }).promise;
+              const { data: { text } } = await Tesseract.recognize(canvas, 'spa');
+              
+              const ocrWordsFirstPage = text.split(/\s+/).filter(word => word.length > 0).length;
+              // Estimación total basada en la página procesada con OCR
+              wordCount = ocrWordsFirstPage > 0 ? (ocrWordsFirstPage * pages) : (250 * pages);
+            } else if (pages > MAX_PAGES_BROWSER) {
+              // Proyectar el conteo si limitamos las páginas por seguridad
+              wordCount = Math.round((wordCount / MAX_PAGES_BROWSER) * pages);
+            }
+
+            return { file, isOfficial: true, pages: pages, words: Math.max(50, wordCount) };
+          } 
+          
+          // 2. SI ES UNA IMAGEN (JPG, PNG)
+          else if (file.type.startsWith('image/')) {
+            const { data: { text } } = await Tesseract.recognize(file, 'spa');
+            wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+            return { file, isOfficial: true, pages: 1, words: Math.max(50, wordCount) };
+          } 
+          
+          // 3. OTROS FORMATOS (DOCX, etc.)
+          else {
+            return { file, isOfficial: true, pages: 1, words: 250 };
+          }
+
         } catch (err) {
-          console.error("OCR Error:", err);
+          console.error("Error al procesar documento:", err);
           return { file, isOfficial: true, pages: 1, words: 250 };
         }
       })
     );
+    
     setFiles((prev) => [...prev, ...processedFiles]);
     setAnalyzing(false);
     setResult(null);
@@ -46,12 +112,13 @@ function App() {
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFilesWithOCR(e.dataTransfer.files);
+      processFilesHybrid(e.dataTransfer.files);
     }
   };
+  
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      processFilesWithOCR(e.target.files);
+      processFilesHybrid(e.target.files);
     }
   };
 
@@ -60,12 +127,14 @@ function App() {
     setFiles(newFiles);
     setResult(null);
   };
+
   const toggleOfficial = (index) => {
     const newFiles = [...files];
     newFiles[index].isOfficial = !newFiles[index].isOfficial;
     setFiles(newFiles);
     setResult(null);
   };
+
   const updatePages = (index, value) => {
     const newFiles = [...files];
     newFiles[index].pages = value < 1 ? 1 : value;
@@ -84,6 +153,7 @@ function App() {
     }
     setAnalyzing(true);
     setResult(null);
+    
     setTimeout(() => {
       let totalTranslationCost = 0;
       let totalPages = 0;
@@ -99,6 +169,7 @@ function App() {
           cost: docCost.toFixed(2)
         };
       });
+      
       const totalCertificationCost = CERTIFICATION_FEES * files.length;
       const totalEstimated = totalTranslationCost + totalCertificationCost;
       
@@ -128,6 +199,7 @@ function App() {
     const { error } = await supabase
       .from('profiles')
       .insert([{ first_name: clientData.name, phone_number: clientData.phone, country_code: clientData.countryCode }]);
+    
     if (error) {
       console.error("Error saving data:", error);
       alert("There was an issue processing your request. Please try again.");
@@ -175,11 +247,13 @@ function App() {
           <a href="#contact">CONTACTS</a>
         </nav>
       </header>
+      
       <main>
         {/* SECTION 1: INTERACTIVE ESTIMATOR */}
         <section className="cotizador-card" style={{ padding: '40px 25px' }}>
           <h2 style={{ textAlign: 'center', color: '#117ee4', fontSize: '24px', marginBottom: '10px' }}>Instant Quote</h2>
           <p className="subtitle">Upload your documents and get an exact quote in minutes.</p>
+          
           <div className={`drop-zone ${files.length > 0 ? 'has-file' : ''}`} onDragOver={handleDragOver} onDrop={handleDrop}>
             <div className="drop-zone-content">
               <span className="upload-icon">📄</span>
@@ -195,6 +269,7 @@ function App() {
               </div>
               <p className="formats-note">Accepted formats: PDF, DOCX, JPG (Minimum recommended resolution for USCIS: 300 dpi).</p>
             </div>
+            
             {files.length > 0 && (
               <div className="file-list">
                 {files.map((obj, index) => (
@@ -218,6 +293,7 @@ function App() {
               </div>
             )}
           </div>
+          
           <div className="selectors-container">
             <select value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="lang-select">
               <option value="">Select Source Language</option>
@@ -235,12 +311,14 @@ function App() {
               {analyzing ? 'Analyzing...' : 'Calculate Cost'}
             </button>
           </div>
+          
           {analyzing && (
             <div className="analizando-loader">
               <div className="spinner"></div>
-              <p>Reading document content with AI...</p>
+              <p>Reading document content...</p>
             </div>
           )}
+          
           {result && (
             <div className="resultado-cotizacion">
               <h3>Quote Summary</h3>
@@ -277,6 +355,7 @@ function App() {
             </div>
           )}
         </section>
+
         {/* SECTIONS 2 & 3: SERVICES AND TRACKER */}
         <section id="services">
           <h2 className="section-title">SPECIALIZED TRANSLATION SERVICES</h2>
@@ -287,6 +366,7 @@ function App() {
             <div className="service-card"><div className="service-icon">📜</div><h3>Legalization and Apostille</h3><p>Complete management to ensure your documents are valid abroad.</p></div>
           </div>
         </section>
+
         <section id="how-it-works">
           <h2 className="section-title">STATUS TRACKER AND PROCESS</h2>
           <div className="tracker-container">
@@ -301,6 +381,7 @@ function App() {
           </div>
         </section>
       </main>
+
       {/* FOOTER */}
       <footer className="site-footer">
         <div className="footer-grid">
@@ -309,6 +390,7 @@ function App() {
           <div className="footer-col"><h4>Legal</h4><ul><li><a href="#">Privacy</a></li></ul></div>
         </div>
       </footer>
+
       {/* MODALS */}
       {showModalInfo && (
         <div className="modal-overlay" onClick={() => setShowModalInfo(false)}>
