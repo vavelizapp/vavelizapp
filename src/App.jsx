@@ -5,8 +5,9 @@ import { supabase } from './supabaseClient'
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configuración del worker de PDF.js usando CDN para que funcione perfecto con Vite
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// FIX: Configuración robusta para Vite y versiones modernas de PDF.js (v4+)
+// Utilizamos un CDN compatible con módulos modernos (.mjs)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 function App() {
   // States for the interactive estimator
@@ -28,7 +29,7 @@ function App() {
   const CERTIFICATION_FEES = 25.00;
   const MAX_PAGES_BROWSER = 100; // Límite de seguridad para el navegador
 
-  // Nueva función Híbrida: PDF Nativo primero, OCR como respaldo
+  // Función Híbrida: PDF Nativo primero, OCR como respaldo
   const processFilesHybrid = async (fileList) => {
     setAnalyzing(true);
     const processedFiles = await Promise.all(
@@ -45,7 +46,7 @@ function App() {
 
             let pagesToProcess = pages;
             if (pages > MAX_PAGES_BROWSER) {
-              alert(`El archivo ${file.name} tiene ${pages} páginas. Por seguridad, analizaremos una muestra representativa de ${MAX_PAGES_BROWSER} páginas para la cotización.`);
+              alert(`El archivo ${file.name} tiene ${pages} páginas. Por seguridad, analizaremos las primeras ${MAX_PAGES_BROWSER}.`);
               pagesToProcess = MAX_PAGES_BROWSER;
             }
 
@@ -60,7 +61,7 @@ function App() {
 
             wordCount = fullText.split(/\s+/).filter(word => word.length > 0).length;
 
-            // Si hay muy pocas palabras, asumimos que es un documento escaneado y usamos OCR como respaldo
+            // Si el PDF es un escaneo sin texto, usamos OCR
             if (wordCount < pagesToProcess * 10) {
               console.log(`PDF escaneado detectado en ${file.name}. Usando OCR en la primera página...`);
               const page1 = await pdf.getPage(1);
@@ -74,30 +75,30 @@ function App() {
               const { data: { text } } = await Tesseract.recognize(canvas, 'spa');
               
               const ocrWordsFirstPage = text.split(/\s+/).filter(word => word.length > 0).length;
-              // Estimación total basada en la página procesada con OCR
               wordCount = ocrWordsFirstPage > 0 ? (ocrWordsFirstPage * pages) : (250 * pages);
             } else if (pages > MAX_PAGES_BROWSER) {
-              // Proyectar el conteo si limitamos las páginas por seguridad
               wordCount = Math.round((wordCount / MAX_PAGES_BROWSER) * pages);
             }
 
-            return { file, isOfficial: true, pages: pages, words: Math.max(50, wordCount) };
+            return { file, isOfficial: true, pages: pages, words: Math.max(1, wordCount) };
           } 
           
           // 2. SI ES UNA IMAGEN (JPG, PNG)
           else if (file.type.startsWith('image/')) {
             const { data: { text } } = await Tesseract.recognize(file, 'spa');
             wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-            return { file, isOfficial: true, pages: 1, words: Math.max(50, wordCount) };
+            return { file, isOfficial: true, pages: 1, words: Math.max(1, wordCount) };
           } 
           
-          // 3. OTROS FORMATOS (DOCX, etc.)
+          // 3. OTROS FORMATOS
           else {
             return { file, isOfficial: true, pages: 1, words: 250 };
           }
 
         } catch (err) {
-          console.error("Error al procesar documento:", err);
+          // AHORA TE AVISARÁ SI HAY UN ERROR en lugar de ocultarlo
+          console.error("Error crítico al procesar documento:", err);
+          alert(`⚠️ No se pudo analizar completamente el archivo: ${file.name}. Presiona F12 para ver el error en consola. Se asignarán 250 palabras por defecto.`);
           return { file, isOfficial: true, pages: 1, words: 250 };
         }
       })
@@ -108,6 +109,8 @@ function App() {
     setResult(null);
   };
 
+  // ... (El resto del código hacia abajo sigue exactamente igual desde handleDragOver en adelante)
+// Aqui
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e) => {
     e.preventDefault();
