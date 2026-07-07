@@ -42,8 +42,10 @@
   font-size: 55px;
   font-weight: 900;
   letter-spacing: 2px;
+  /* Efecto de texto con gradiente llamativo */
   background: var(--logo-gradient);
   -webkit-background-clip: text;
+  background-clip: text; /* Agrega esta línea para complacer a VS Code */
   -webkit-text-fill-color: transparent;
   text-shadow:
     1px 1px 0px #0e67bc,
