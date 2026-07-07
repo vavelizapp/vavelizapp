@@ -42,21 +42,30 @@
   font-size: 55px; 
   font-weight: 900; 
   letter-spacing: 2px;
+  
   /* Efecto de texto con gradiente llamativo */
   background: var(--logo-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0px 4px 15px rgba(0, 210, 255, 0.3);
+  
+  /* Efecto 3D: Capas apiladas simulando volumen + sombra base */
+  text-shadow: 
+    1px 1px 0px #0e67bc, 
+    2px 2px 0px #0b559b, 
+    3px 3px 0px #094580, 
+    4px 4px 0px #7f8285,
+    5px 5px 0px #919496, 
+    8px 8px 20px rgba(0, 162, 255, 0.4); /* Resplandor difuminado en la base */
 }
 
 .brand-tagline { 
   display: block; 
-  font-size: 13px; 
+  font-size: 16px; 
   font-weight: 700; 
   letter-spacing: 3px; 
   color: var(--slogan-color); 
-  margin-top: 2px; 
-  text-transform: uppercase; 
+  margin-top: -10px;
+   /*text-transform: uppercase; */
 }
 
 /* --- CONTACTO Y NAVEGACIÓN --- */

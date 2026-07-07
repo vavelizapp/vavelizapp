@@ -12,7 +12,7 @@ function App() {
             </a>
             <div className="brand-text-block">
               <h1>VAVELIZ</h1>
-              <span className="brand-tagline">RELIABLY EFFICIENT</span>
+              <span className="brand-tagline">Reliably Efficient</span>
             </div>
           </div>
           <div className="divider"></div>

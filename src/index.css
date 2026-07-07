@@ -9,8 +9,8 @@
   --primary-hover: #095ab8; /* Azul oscuro para interacciones */
   
   /* Gradiente espectacular para el LOGO VAVELIZ */
-  --logo-gradient: linear-gradient(135deg, #117ee4 0%, #00d2ff 100%);
-  --slogan-color: #7f8c8d; /* Gris metálico sutil */
+  --logo-gradient: linear-gradient(135deg, #003cff 0%, #183a7e 100%);
+  --slogan-color: #000000; /* Gris metálico sutil */
   
   /* Colores de Tarjetas y Sombras */
   --card-bg: #ffffff;
