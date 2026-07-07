@@ -1,28 +1,40 @@
+/* index.css - Estilos Globales y Variables */
 :root {
-  --text-titulos: #117ee4;
-  --text-main: #3bda14;
-  --text-logo: #ffaa00;
-  --text-slogan: #dd1313;
-  --text-muted: #a20ddd;
+  /* Paleta de Colores Premium */
+  --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  --text-main: #2c3e50; /* Gris pizarra oscuro, más elegante y legible que el negro puro */
+  --text-muted: #5c6c7c; /* Gris medio para textos secundarios */
+  
+  --primary-color: #117ee4; /* Azul confianza legal */
+  --primary-hover: #095ab8; /* Azul oscuro para interacciones */
+  
+  /* Gradiente espectacular para el LOGO VAVELIZ */
+  --logo-gradient: linear-gradient(135deg, #117ee4 0%, #00d2ff 100%);
+  --slogan-color: #7f8c8d; /* Gris metálico sutil */
+  
+  /* Colores de Tarjetas y Sombras */
+  --card-bg: #ffffff;
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px rgba(17, 126, 228, 0.15);
 }
+
 body {
   margin: 0;
   padding: 0;
- 
-  /* Efecto de Fondo Metalizado (Titanio Oscuro) */
-  background: linear-gradient(135deg, #e6dfdf 0%, #d1c8c8 100%);
-  background-attachment: fixed; /* El metal se queda fijo aunque bajes la página */
- 
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-main);
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased; /* Suaviza las fuentes en Mac/iOS */
 }
-h1, h2 {
-  color: var(--text-titulos);
-  font-weight: 500;
-  letter-spacing: 0.5px;
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  margin-top: 0;
 }
+
 strong {
-  color: var(--text-titulos);
+  color: var(--primary-color);
 }
