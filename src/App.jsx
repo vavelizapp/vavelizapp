@@ -33,7 +33,7 @@ function App() {
             <a href="/" className="logo-link"></a>
             <div className="brand-text-block">
               <h1>VAVELIZ</h1>
-              <span className="brand-tagline">RELIABLY EFFICIENT</span>
+              <span className="brand-tagline">Reliably Efficient</span>
             </div>
           </div>
           <div className="divider"></div>
@@ -130,7 +130,7 @@ function App() {
             </ul>
           </div>
         </div>
-        <div className="footer-bottom" style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#7f8c8d' }}>
+        <div className="footer-bottom" style={{ textAlign: 'center', margin: '20px 0 0 0', fontSize: '12px', color: '#7f8c8d' }}>
           &copy; {new Date().getFullYear()} Smart Solutions. All rights reserved.
         </div>
       </footer>
