@@ -37,25 +37,47 @@
   text-align: center;
 }
 
+/* 1. TEXTO BASE: Invisible, pero proyecta el bloque 3D azul oscuro */
 .brand-text-block h1 {
+  position: relative;
   margin: 0;
   font-size: 55px;
   font-weight: 900;
   letter-spacing: 2px;
-  /* Efecto de texto con gradiente llamativo */
-  background: var(--logo-gradient);
-  -webkit-background-clip: text;
-  background-clip: text; /* Agrega esta línea para complacer a VS Code */
-  -webkit-text-fill-color: transparent;
+  
+  /* Hacemos el texto transparente para que solo se vea la sombra */
+  color: transparent; 
+  
+  /* Extrusión 3D sólida y resplandor */
   text-shadow:
-    1px 1px 0px #0e67bc,
-    2px 2px 0px #0b559b,
-    3px 3px 0px #094580,
-    4px 4px 0px #7f8285,
-    5px 5px 0px #919496,
-    8px 8px 20px rgba(0, 162, 255, 0.4);
+    1px 1px 0px #1450a3,
+    2px 2px 0px #104287,
+    3px 3px 0px #0d346b,
+    4px 4px 0px #0a264f,
+    5px 5px 0px #071833,
+    8px 8px 15px rgba(2, 53, 65, 0.75);
 }
 
+/* 2. CAPA FRONTAL: Solo el gradiente limpio de 2 colores, sin sombras */
+.brand-text-block h1::before {
+  content: 'VAVELIZ'; /* Debe decir exactamente VAVELIZ */
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2; /* Lo fuerza a estar por encima de todo */
+  
+  /* Tu gradiente intacto */
+  background: var(--logo-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; 
+  
+  /* Nos aseguramos de que esta capa no tenga sombras que la manchen */
+  text-shadow: none;
+}
 .brand-tagline {
   display: block;
   font-size: 16px;
