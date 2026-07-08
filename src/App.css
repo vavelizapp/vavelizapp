@@ -1,5 +1,3 @@
-/* App.css - Estructura y Componentes */
-
 .app-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -44,11 +42,7 @@
   font-size: 55px;
   font-weight: 900;
   letter-spacing: 2px;
-  
-  /* Hacemos el texto transparente para que solo se vea la sombra */
-  color: transparent; 
-  
-  /* Extrusión 3D sólida y resplandor */
+  color: transparent;
   text-shadow:
     1px 1px 0px #1450a3,
     2px 2px 0px #104287,
@@ -60,24 +54,21 @@
 
 /* 2. CAPA FRONTAL: Solo el gradiente limpio de 2 colores, sin sombras */
 .brand-text-block h1::before {
-  content: 'VAVELIZ'; /* Debe decir exactamente VAVELIZ */
+  content: 'VAVELIZ'; 
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  z-index: 2; /* Lo fuerza a estar por encima de todo */
-  
-  /* Tu gradiente intacto */
+  z-index: 2;
   background: var(--logo-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: transparent; 
-  
-  /* Nos aseguramos de que esta capa no tenga sombras que la manchen */
+  color: transparent;
   text-shadow: none;
 }
+
 .brand-tagline {
   display: block;
   font-size: 16px;
@@ -134,7 +125,7 @@
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
-  margin-top: 5px;
+  margin-top: 10px;
   transition: all 0.3s ease;
   text-decoration: none;
   text-align: center;
@@ -334,6 +325,7 @@ section {
   padding: 40px;
   border-radius: 12px;
   width: 100%;
+  max-width: 400px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
   position: relative;
   animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -355,7 +347,6 @@ section {
   color: #ef4444;
 }
 
-/* Caja de copiado de correo */
 .copy-email-box {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;

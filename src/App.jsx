@@ -1,4 +1,3 @@
-/*App.jsx Estructura visual, Lógica integrada, componentes dinámicos*/
 import { useState } from 'react';
 import './App.css';
 
@@ -131,7 +130,7 @@ function App() {
           </div>
         </div>
         <div className="footer-bottom" style={{ textAlign: 'center', margin: '20px 0 0 0', fontSize: '12px', color: '#7f8c8d' }}>
-          &copy; {new Date().getFullYear()} Vaveliz. All rights reserved.
+          &copy; {new Date().getFullYear()} Smart Solutions. All rights reserved.
         </div>
       </footer>
 
